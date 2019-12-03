@@ -43,9 +43,6 @@ func (s *store) Del(key string, val interface{}) error {
 		iter := tx.Documents(query)
 		doc, err := first(iter)
 		if err != nil {
-			if err == iterator.Done || err == ErrDocumentDoesNotExist {
-				return nil // Document does not exist - we're done!
-			}
 			return err
 		}
 		return tx.Delete(doc.Ref)
@@ -57,11 +54,11 @@ var ErrDocumentDoesNotExist = errors.New("document does not exist")
 
 func first(iter *firestore.DocumentIterator) (*firestore.DocumentSnapshot, error) {
 	doc, err := iter.Next()
+	if err == iterator.Done {
+		return nil, ErrDocumentDoesNotExist
+	}
 	if err != nil {
 		return nil, err
-	}
-	if !doc.Exists() {
-		return nil, ErrDocumentDoesNotExist
 	}
 	return doc, nil
 }
